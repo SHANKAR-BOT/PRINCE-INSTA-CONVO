@@ -65,54 +65,16 @@ def render_chat_panel(form_key="pika_chat_form"):
     
     with chat_container:
         if len(st.session_state.ai_chat_history) > 0:
-            st.markdown('<div style="max-height: 500px; overflow-y: auto; padding: 0.5rem;">', unsafe_allow_html=True)
-            
             for msg in st.session_state.ai_chat_history:
                 role = msg.get('role', 'user')
                 content = msg.get('content', '')
                 
                 if role == 'user':
-                    escaped_content = html.escape(content)
-                    st.markdown(f"""
-                    <div class="chat-message user" style="display: flex; flex-direction: row-reverse; margin-bottom: 1rem; align-items: flex-start;">
-                        <div class="chat-bubble user" style="
-                            background: linear-gradient(135deg, rgba(255, 23, 68, 0.3), rgba(255, 23, 68, 0.2));
-                            border: 2px solid #FF1744;
-                            color: #ffffff;
-                            padding: 0.8rem 1rem;
-                            border-radius: 15px;
-                            max-width: 80%;
-                            word-wrap: break-word;
-                            margin-left: auto;
-                        ">
-                            {escaped_content}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    with st.chat_message("user", avatar="👤"):
+                        st.markdown(content)
                 else:
-                    avatar_html = ""
-                    if pika_avatar:
-                        avatar_html = f'<img src="data:image/jpeg;base64,{pika_avatar}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #FF1744; margin-right: 0.5rem; flex-shrink: 0;" />'
-                    
-                    escaped_content = html.escape(content)
-                    st.markdown(f"""
-                    <div class="chat-message assistant" style="display: flex; margin-bottom: 1rem; align-items: flex-start;">
-                        {avatar_html}
-                        <div class="chat-bubble assistant" style="
-                            background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.1));
-                            border: 2px solid rgba(0, 217, 255, 0.5);
-                            color: #ffffff;
-                            padding: 0.8rem 1rem;
-                            border-radius: 15px;
-                            max-width: 80%;
-                            word-wrap: break-word;
-                        ">
-                            {escaped_content}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+                    with st.chat_message("assistant", avatar="🤖"):
+                        st.markdown(content)
         else:
             st.info("👋 Namaste! Main Pika hoon. Aap mujhse kuch bhi puch sakte ho!")
     
