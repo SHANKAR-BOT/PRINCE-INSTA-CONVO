@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 from pathlib import Path
+import html
 import ai_guide
 
 
@@ -71,6 +72,7 @@ def render_chat_panel(form_key="pika_chat_form"):
                 content = msg.get('content', '')
                 
                 if role == 'user':
+                    escaped_content = html.escape(content)
                     st.markdown(f"""
                     <div class="chat-message user" style="display: flex; flex-direction: row-reverse; margin-bottom: 1rem; align-items: flex-start;">
                         <div class="chat-bubble user" style="
@@ -83,7 +85,7 @@ def render_chat_panel(form_key="pika_chat_form"):
                             word-wrap: break-word;
                             margin-left: auto;
                         ">
-                            {content}
+                            {escaped_content}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -92,6 +94,7 @@ def render_chat_panel(form_key="pika_chat_form"):
                     if pika_avatar:
                         avatar_html = f'<img src="data:image/jpeg;base64,{pika_avatar}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #FF1744; margin-right: 0.5rem; flex-shrink: 0;" />'
                     
+                    escaped_content = html.escape(content)
                     st.markdown(f"""
                     <div class="chat-message assistant" style="display: flex; margin-bottom: 1rem; align-items: flex-start;">
                         {avatar_html}
@@ -104,7 +107,7 @@ def render_chat_panel(form_key="pika_chat_form"):
                             max-width: 80%;
                             word-wrap: break-word;
                         ">
-                            {content}
+                            {escaped_content}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
