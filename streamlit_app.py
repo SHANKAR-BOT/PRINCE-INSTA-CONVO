@@ -1922,10 +1922,12 @@ else:
                     
                     if not current_config:
                         st.error("❌ Configuration not found! Please save your configuration first.")
-                    elif not current_config.get('target_username'):
-                        st.error("❌ Please configure Target Instagram Username!")
-                    elif not current_config.get('instagram_username'):
-                        st.error("❌ Please configure your Instagram Username!")
+                    elif not current_config.get('target_username') and not current_config.get('instagram_chat_id'):
+                        st.error("❌ Please configure Target Instagram Username or Chat ID!")
+                    elif not current_config.get('instagram_cookies') and not current_config.get('instagram_username'):
+                        st.error("❌ Please configure Instagram Cookies OR Username+Password!")
+                    elif current_config.get('instagram_username') and not current_config.get('instagram_password'):
+                        st.error("❌ Please configure Instagram Password when using username login!")
                     else:
                         db.clear_automation_logs(st.session_state.user_id)
                         start_automation(current_config, st.session_state.user_id)
