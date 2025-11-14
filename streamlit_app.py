@@ -1863,7 +1863,7 @@ else:
                     final_cookies = instagram_cookies if instagram_cookies else user_config.get('instagram_cookies', '')
                     final_username = instagram_username if instagram_username else user_config.get('instagram_username', '')
 
-                    db.save_user_config(
+                    save_result = db.save_user_config(
                         st.session_state.username,
                         target_username,
                         name_prefix,
@@ -1874,8 +1874,28 @@ else:
                         final_cookies,
                         instagram_chat_id if instagram_chat_id else ""
                     )
-                    st.success("✅ Configuration saved successfully!")
+                    if save_result:
+                        st.success("✅ Configuration saved successfully!")
+                    else:
+                        st.error("❌ Failed to save configuration. Please check MongoDB connection!")
                     st.rerun()
+            
+            st.markdown("---")
+            st.markdown("### 📋 Current Saved Configuration")
+            
+            saved_config = db.get_user_config(st.session_state.user_id)
+            if saved_config:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.info(f"**Target Username:** {saved_config.get('target_username', 'Not set')}")
+                    st.info(f"**Instagram Username:** {saved_config.get('instagram_username', 'Not set')}")
+                    st.info(f"**Message Prefix:** {saved_config.get('name_prefix', 'Not set')}")
+                with col2:
+                    st.info(f"**Delay:** {saved_config.get('delay', 'Not set')} seconds")
+                    st.info(f"**Chat ID:** {saved_config.get('instagram_chat_id', 'Not set')}")
+                    st.info(f"**Cookies:** {'✅ Set' if saved_config.get('instagram_cookies') else '❌ Not set'}")
+            else:
+                st.warning("⚠️ No configuration saved yet! Please fill the form above and click Save Configuration.")
 
         with tab2:
             st.markdown("### Automation Control")
@@ -1899,12 +1919,17 @@ else:
             with col1:
                 if st.button("▶️ Start Instagram DM", disabled=st.session_state.automation_state.running, use_container_width=True):
                     current_config = db.get_user_config(st.session_state.user_id)
-                    if current_config and current_config.get('target_username') and current_config.get('instagram_username'):
+                    
+                    if not current_config:
+                        st.error("❌ Configuration not found! Please save your configuration first.")
+                    elif not current_config.get('target_username'):
+                        st.error("❌ Please configure Target Instagram Username!")
+                    elif not current_config.get('instagram_username'):
+                        st.error("❌ Please configure your Instagram Username!")
+                    else:
                         db.clear_automation_logs(st.session_state.user_id)
                         start_automation(current_config, st.session_state.user_id)
                         st.rerun()
-                    else:
-                        st.error("❌ Please configure Target Instagram Username aur credentials pehle!")
 
             with col2:
                 if st.button("⏹️ Stop E2ee", disabled=not st.session_state.automation_state.running, use_container_width=True):
