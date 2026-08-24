@@ -755,22 +755,30 @@ def send_instagram_message(driver, message_input, message_text, automation_state
             """, message_input, message_text)
             time.sleep(0.5)
 
-        # Now send the message
+        # Now send the message. Instagram changes its generated class names
+        # frequently, so prefer stable accessibility attributes over classes
+        # or visible text.
         send_button_selectors = [
-            "//button[contains(text(), 'Send')]",
-            "//div[@role='button' and contains(text(), 'Send')]",
-            "//button[@type='submit']",
-            "//div[contains(@class, 'x1i10hfl') and @role='button']"
+            "//button[@aria-label='Send']",
+            "//*[@role='button' and @aria-label='Send']",
+            "//button[contains(translate(@aria-label, 'SEND', 'send'), 'send')]",
+            "//*[@role='button' and contains(translate(@aria-label, 'SEND', 'send'), 'send')]",
+            "//button[normalize-space(.)='Send']",
+            "//*[@role='button' and normalize-space(.)='Send']",
+            "//button[@type='submit']"
         ]
 
         send_button = None
         for selector in send_button_selectors:
             try:
                 buttons = driver.find_elements(By.XPATH, selector)
-                if buttons:
-                    send_button = buttons[0]
+                for button in buttons:
+                    if button.is_displayed() and button.is_enabled():
+                        send_button = button
+                        break
+                if send_button:
                     break
-            except:
+            except Exception:
                 continue
 
         if send_button:
@@ -781,24 +789,40 @@ def send_instagram_message(driver, message_input, message_text, automation_state
                 
                 # Try regular click first
                 send_button.click()
+                time.sleep(1)
                 log(f'{process_id}: ✅ Message sent!')
                 return True
-            except:
+            except Exception:
                 # Fallback: JavaScript click
                 try:
                     driver.execute_script("arguments[0].click();", send_button)
+                    time.sleep(1)
                     log(f'{process_id}: ✅ Message sent (JS click)!')
                     return True
-                except:
-                    # Last resort: Enter key
-                    message_input.send_keys(Keys.RETURN)
-                    log(f'{process_id}: ✅ Message sent via Enter key!')
-                    return True
+                except Exception:
+                    pass
         else:
-            # No button found, use Enter key
-            message_input.send_keys(Keys.RETURN)
-            log(f'{process_id}: ✅ Message sent via Enter key!')
-            return True
+            log(f'{process_id}: ⚠️ Send button not found; trying Enter key')
+
+        # Instagram normally sends a focused DM with Enter. Only report
+        # success when the input was cleared after the key press; otherwise
+        # the message may still be sitting in the composer.
+        try:
+            message_input.send_keys(Keys.ENTER)
+            time.sleep(1)
+            remaining_text = driver.execute_script("""
+                const element = arguments[0];
+                return (element.innerText || element.textContent ||
+                        element.value || '').trim();
+            """, message_input)
+            if not remaining_text:
+                log(f'{process_id}: ✅ Message sent via Enter key!')
+                return True
+            log(f'{process_id}: ❌ Enter key did not clear the message composer')
+            return False
+        except Exception as enter_error:
+            log(f'{process_id}: ❌ Could not send with Enter: {str(enter_error)[:120]}')
+            return False
 
     except Exception as e:
         log(f'{process_id}: ❌ Error sending message: {str(e)}')
